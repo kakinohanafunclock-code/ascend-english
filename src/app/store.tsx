@@ -15,10 +15,17 @@ import {
   estimateSkillScores,
   estimateToefl,
   generateCurriculum,
+  createWord,
+  reviewWord,
+  hasTerm,
   type Attempt,
   type Curriculum,
   type DiagnosticAnswer,
+  type ReviewGrade,
+  type VocabSeedInput,
+  type VocabWord,
 } from '../domain';
+import { VOCAB_DECK } from '../content';
 import { createConfiguredAiClient } from '../ai';
 import type { AiClient } from '../ai/client';
 import {
@@ -33,10 +40,15 @@ interface AppState {
   settings: Settings;
   attempts: Attempt[];
   curriculum: Curriculum | null;
+  vocab: VocabWord[];
   ai: AiClient;
   completeDiagnostic: (answers: DiagnosticAnswer[]) => Promise<void>;
   recordAttempt: (attempt: Attempt) => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
+  addVocabWord: (seed: VocabSeedInput) => Promise<{ added: boolean }>;
+  reviewVocabWord: (word: VocabWord, grade: ReviewGrade) => Promise<void>;
+  removeVocabWord: (id: string) => Promise<void>;
+  seedVocabDeck: () => Promise<void>;
   resetAll: () => Promise<void>;
 }
 
@@ -64,21 +76,24 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
+  const [vocab, setVocab] = useState<VocabWord[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const [p, s, a, c] = await Promise.all([
+      const [p, s, a, c, v] = await Promise.all([
         repository.getProfile(),
         repository.getSettings(),
         repository.getAttempts(),
         repository.getCurriculum(),
+        repository.getVocab(),
       ]);
       if (!active) return;
       setProfile(p ?? null);
       setSettings(s);
       setAttempts(a);
       setCurriculum(c ?? null);
+      setVocab(v);
       setLoading(false);
     })();
     return () => {
@@ -135,11 +150,39 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     setSettings(next);
   }
 
+  async function addVocabWord(seed: VocabSeedInput): Promise<{ added: boolean }> {
+    if (hasTerm(vocab, seed.term)) return { added: false };
+    const next = await repository.addWord(createWord(seed));
+    setVocab(next);
+    return { added: true };
+  }
+
+  async function reviewVocabWord(word: VocabWord, grade: ReviewGrade): Promise<void> {
+    const next = await repository.updateWord(reviewWord(word, grade));
+    setVocab(next);
+  }
+
+  async function removeVocabWord(id: string): Promise<void> {
+    const next = await repository.removeWord(id);
+    setVocab(next);
+  }
+
+  async function seedVocabDeck(): Promise<void> {
+    let current = vocab;
+    for (const seed of VOCAB_DECK) {
+      if (!hasTerm(current, seed.term)) {
+        current = await repository.addWord(createWord(seed));
+      }
+    }
+    setVocab(current);
+  }
+
   async function resetAll(): Promise<void> {
     await repository.clearAll();
     setProfile(null);
     setCurriculum(null);
     setAttempts([]);
+    setVocab([]);
     setSettings(await repository.getSettings());
   }
 
@@ -157,10 +200,15 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     settings,
     attempts,
     curriculum,
+    vocab,
     ai: aiClient,
     completeDiagnostic,
     recordAttempt,
     updateSettings,
+    addVocabWord,
+    reviewVocabWord,
+    removeVocabWord,
+    seedVocabDeck,
     resetAll,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

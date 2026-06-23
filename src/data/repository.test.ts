@@ -56,6 +56,25 @@ describe('Repository (memory store)', () => {
     expect(await repo.getAiCache('k1')).toEqual({ response: 'hello', at: 'now' });
   });
 
+  it('adds, updates and removes vocab words', async () => {
+    const word = {
+      id: 'v1',
+      term: 'mitigate',
+      meaning: '軽減する',
+      box: 1,
+      due: '2026-06-23',
+      addedAt: '2026-06-23T00:00:00.000Z',
+      reps: 0,
+      lapses: 0,
+    };
+    await repo.addWord(word);
+    expect(await repo.getVocab()).toHaveLength(1);
+    await repo.updateWord({ ...word, box: 2 });
+    expect((await repo.getVocab())[0].box).toBe(2);
+    await repo.removeWord('v1');
+    expect(await repo.getVocab()).toEqual([]);
+  });
+
   it('clears everything', async () => {
     await repo.saveProfile(profile);
     await repo.addAttempt(attempt('2026-06-20T09:00:00Z', 10));

@@ -9,6 +9,7 @@ import { Reading } from './ui/screens/Reading';
 import { Listening } from './ui/screens/Listening';
 import { Speaking } from './ui/screens/Speaking';
 import { Writing } from './ui/screens/Writing';
+import { Vocabulary } from './ui/screens/Vocabulary';
 import { Settings } from './ui/screens/Settings';
 
 function Root() {
@@ -58,6 +59,7 @@ function Routed() {
         <Route path="/listening" element={<Listening />} />
         <Route path="/speaking" element={<Speaking />} />
         <Route path="/writing" element={<Writing />} />
+        <Route path="/vocabulary" element={<Vocabulary />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -14,8 +14,17 @@
 - 型チェック `tsc --noEmit`: クリーン。本番ビルド `npm run build`: 成功。
 - E2E（Playwright / Chromium）: 「診断 → 今日のタスク → Writing AI添削 → ダッシュボード反映 → 通知許可フロー/時刻設定」**1 test green**。
 
-## 残タスク / 任意拡張
-- 任意: Supabase 同期、コンテンツ拡充、Web Push 鍵(VAPID)設定、Listening/Reading の AI 解説キャッシュ拡張。
+## 追加実装（2026-06-23 第2次）
+- 総学習時間を想定所要時間の合算に変更（estimatedMinutes）。Reading 画面テストで担保。
+- 英単語学習＋単語帳（Leitner SRS）: ドメイン（vocab）+ Repository CRUD + Vocabulary 画面（復習/一覧/追加）。
+- AI 添削の詳細化: 日本語訳・語注グロッサリを追加。採点画面で日本語訳表示＋語注から単語帳追加。Reading は本文の日本語訳トグルと語彙の単語帳追加。
+- コンテンツ増量: 診断、Reading/Listening 各2レッスン（日本語訳付き）、Speaking/Writing 各2題。
+- テスト: 合計 **94 + E2E 1** green。
+
+## 残タスク / 進行中
+- Web Push（VAPID）本実装。
+- Supabase クラウド同期（任意設定）。
+- GitHub リモート連携・無料枠デプロイ。
 
 ## 既知の課題 / 留意点
 - TOEFL 公式スコアリングは非公開のため近似アルゴリズムを使用（DECISIONS 参照）。

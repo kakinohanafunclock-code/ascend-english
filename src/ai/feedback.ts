@@ -1,14 +1,17 @@
 import type { AiClient } from './client';
 import { AiError } from './types';
 import type {
+  GlossaryItem,
   ReadingExplanation,
   SpeakingFeedback,
   WritingFeedback,
 } from './types';
 
 const SYSTEM_TUTOR =
-  'You are an expert TOEFL iBT tutor helping a student reach 105+. ' +
-  'Be precise, encouraging and specific. Always respond with ONLY a single valid JSON object, no prose.';
+  'You are an expert TOEFL iBT tutor helping a Japanese student reach 105+. ' +
+  'Be precise, encouraging and specific. Write all strengths, improvements and ' +
+  'explanations in natural Japanese (日本語). Always respond with ONLY a single valid ' +
+  'JSON object, no prose.';
 
 function rubricToScaled(avg: number): number {
   return Math.round((Math.min(5, Math.max(0, avg)) / 5) * 30);
@@ -47,7 +50,10 @@ export async function correctWriting(
     `Task type: ${task.essayType}\nQuestion: ${task.prompt}\n\nStudent essay:\n"""${task.essay}"""\n\n` +
     'Score with the TOEFL Writing rubric. Return JSON with keys: ' +
     'estimatedScore (0-5), rubric {taskResponse,coherence,languageUse} (each 0-5), ' +
-    'strengths (string[]), improvements (string[]), correctedText (string).';
+    'strengths (Japanese string[]), improvements (Japanese string[] — 具体的で丁寧に), ' +
+    'correctedText (an improved English version), ' +
+    'translationJa (the Japanese translation of correctedText), ' +
+    'glossary ([{term, meaning(Japanese), example}] of difficult or useful words from the essay/correction).';
   try {
     const { text } = await client.complete({ system: SYSTEM_TUTOR, prompt: userPrompt });
     const raw = parseJsonLoose<Partial<WritingFeedback>>(text);
@@ -66,6 +72,8 @@ export async function correctWriting(
       strengths: asStrings(raw.strengths),
       improvements: asStrings(raw.improvements),
       correctedText: typeof raw.correctedText === 'string' ? raw.correctedText : undefined,
+      translationJa: typeof raw.translationJa === 'string' ? raw.translationJa : undefined,
+      glossary: asGlossary(raw.glossary),
       rubric,
       source: 'ai',
     };
@@ -107,6 +115,7 @@ export function fallbackWriting(task: WritingTask): WritingFeedback {
     toeflScaled: rubricToScaled(estimatedScore),
     strengths,
     improvements,
+    glossary: [],
     rubric,
     source: 'fallback',
   };
@@ -126,7 +135,10 @@ export async function correctSpeaking(
   const userPrompt =
     `Speaking prompt: ${task.prompt}\n\nStudent spoken response (transcript):\n"""${task.transcript}"""\n\n` +
     'Score with the TOEFL Speaking rubric. Return JSON with keys: estimatedScore (0-5), ' +
-    'rubric {delivery,languageUse,topicDevelopment} (each 0-5), strengths (string[]), improvements (string[]).';
+    'rubric {delivery,languageUse,topicDevelopment} (each 0-5), strengths (Japanese string[]), ' +
+    'improvements (Japanese string[] — 具体的に), ' +
+    'translationJa (a Japanese translation/summary of a stronger model answer), ' +
+    'glossary ([{term, meaning(Japanese), example}] of useful words/phrases).';
   try {
     const { text } = await client.complete({ system: SYSTEM_TUTOR, prompt: userPrompt });
     const raw = parseJsonLoose<Partial<SpeakingFeedback>>(text);
@@ -144,6 +156,8 @@ export async function correctSpeaking(
       toeflScaled: rubricToScaled(estimatedScore),
       strengths: asStrings(raw.strengths),
       improvements: asStrings(raw.improvements),
+      translationJa: typeof raw.translationJa === 'string' ? raw.translationJa : undefined,
+      glossary: asGlossary(raw.glossary),
       rubric,
       source: 'ai',
     };
@@ -175,6 +189,7 @@ export function fallbackSpeaking(task: SpeakingTask): SpeakingFeedback {
     toeflScaled: rubricToScaled(estimatedScore),
     strengths,
     improvements,
+    glossary: [],
     rubric,
     source: 'fallback',
   };
@@ -194,19 +209,17 @@ export async function explainReading(
   const userPrompt =
     `Passage:\n"""${task.passage}"""\n` +
     (task.question ? `\nFocus question: ${task.question}\n` : '') +
-    '\nProvide a precise reading explanation. Return JSON with keys: summary (string), ' +
-    'keyPoints (string[]), vocabulary ({term,meaning}[]).';
+    '\nProvide a precise reading explanation for a Japanese learner. Return JSON with keys: ' +
+    'summary (Japanese string), translationJa (Japanese translation of the passage), ' +
+    'keyPoints (Japanese string[]), vocabulary ([{term, meaning(Japanese), example}]).';
   try {
     const { text } = await client.complete({ system: SYSTEM_TUTOR, prompt: userPrompt });
     const raw = parseJsonLoose<Partial<ReadingExplanation>>(text);
     return {
       summary: typeof raw.summary === 'string' ? raw.summary : fallbackReading(task).summary,
+      translationJa: typeof raw.translationJa === 'string' ? raw.translationJa : undefined,
       keyPoints: asStrings(raw.keyPoints),
-      vocabulary: Array.isArray(raw.vocabulary)
-        ? raw.vocabulary
-            .filter((v) => v && typeof v.term === 'string')
-            .map((v) => ({ term: String(v.term), meaning: String(v.meaning ?? '') }))
-        : [],
+      vocabulary: asGlossary(raw.vocabulary),
       source: 'ai',
     };
   } catch {
@@ -225,6 +238,19 @@ export function fallbackReading(task: ReadingTask): ReadingExplanation {
     vocabulary: [],
     source: 'fallback',
   };
+}
+
+function asGlossary(v: unknown): GlossaryItem[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is { term: unknown; meaning?: unknown; example?: unknown } =>
+      Boolean(x) && typeof x === 'object' && 'term' in x && typeof (x as { term: unknown }).term === 'string',
+    )
+    .map((x) => ({
+      term: String(x.term),
+      meaning: String(x.meaning ?? ''),
+      example: typeof x.example === 'string' ? x.example : undefined,
+    }));
 }
 
 // ---------------- helpers ----------------

@@ -3,14 +3,14 @@ import { Mic, Square, Sparkles, Loader2 } from 'lucide-react';
 import { useApp } from '../../app/store';
 import { SPEAKING_PROMPTS } from '../../content';
 import { correctSpeaking, type SpeakingFeedback } from '../../ai';
+import { hasTerm } from '../../domain';
 import { startRecognition, isSttSupported, type Recorder } from '../../lib/speech';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { makeAttempt } from '../lib/record';
 
 export function Speaking() {
-  const { ai, recordAttempt } = useApp();
+  const { ai, recordAttempt, vocab, addVocabWord } = useApp();
   const task = SPEAKING_PROMPTS[0];
-  const startedAt = useRef(Date.now());
   const recorderRef = useRef<Recorder | null>(null);
   const [recording, setRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -40,9 +40,8 @@ export function Speaking() {
     const fb = await correctSpeaking(ai, { prompt: task.prompt, transcript });
     setFeedback(fb);
     setLoading(false);
-    const minutes = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
     await recordAttempt(
-      makeAttempt({ skill: 'speaking', taskId: task.id, durationMin: minutes, score: fb.toeflScaled }),
+      makeAttempt({ skill: 'speaking', taskId: task.id, durationMin: task.estimatedMinutes, score: fb.toeflScaled }),
     );
   }
 
@@ -104,6 +103,10 @@ export function Speaking() {
           ]}
           strengths={feedback.strengths}
           improvements={feedback.improvements}
+          translationJa={feedback.translationJa}
+          glossary={feedback.glossary}
+          onAddWord={(g) => addVocabWord(g)}
+          isSaved={(term) => hasTerm(vocab, term)}
           source={feedback.source}
         />
       )}

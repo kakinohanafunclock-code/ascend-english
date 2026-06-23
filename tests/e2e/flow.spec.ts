@@ -44,6 +44,12 @@ test('full journey: diagnostic → today → writing AI correction → dashboard
   await page.getByRole('link', { name: 'ダッシュボード', exact: true }).first().click();
   await expect(page.getByText('総学習時間')).toBeVisible();
 
+  // Vocabulary: seed the base deck and verify a word appears + review is offered.
+  await page.getByRole('link', { name: '単語', exact: true }).first().click();
+  await page.getByRole('button', { name: /基本デッキを追加/ }).click();
+  await expect(page.getByText('mitigate')).toBeVisible();
+  await expect(page.getByRole('button', { name: /復習を始める/ })).toBeEnabled();
+
   // Reminder settings + notification permission flow.
   await page.getByRole('link', { name: '設定', exact: true }).first().click();
   await expect(page.getByText('毎日のリマインド')).toBeVisible();

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Play, Square, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../../app/store';
 import { Quiz, type QuizResult } from '../components/Quiz';
@@ -9,7 +9,6 @@ import { makeAttempt, sectionScoreFromItems } from '../lib/record';
 export function Listening() {
   const { recordAttempt } = useApp();
   const lesson = LISTENING_LESSONS[0];
-  const startedAt = useRef(Date.now());
   const [playing, setPlaying] = useState(false);
   const [showScript, setShowScript] = useState(false);
   const [done, setDone] = useState<QuizResult | null>(null);
@@ -29,12 +28,11 @@ export function Listening() {
   async function onComplete(result: QuizResult) {
     setDone(result);
     setShowScript(true);
-    const minutes = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
     await recordAttempt(
       makeAttempt({
         skill: 'listening',
         taskId: lesson.id,
-        durationMin: minutes,
+        durationMin: lesson.estimatedMinutes,
         accuracy: result.accuracy,
         score: sectionScoreFromItems('listening', result.items),
       }),

@@ -34,6 +34,24 @@ describe('correctWriting', () => {
     expect(fb.correctedText).toBe('Improved essay.');
   });
 
+  it('parses the Japanese translation and glossary', async () => {
+    const client = mockClient(() =>
+      JSON.stringify({
+        estimatedScore: 3,
+        rubric: { taskResponse: 3, coherence: 3, languageUse: 3 },
+        strengths: ['良い構成'],
+        improvements: ['具体例を追加'],
+        correctedText: 'A better essay.',
+        translationJa: 'より良いエッセイ。',
+        glossary: [{ term: 'cohesion', meaning: '結束性', example: 'Good cohesion helps flow.' }],
+      }),
+    );
+    const fb = await correctWriting(client, { prompt: 'Q', essay: 'text', essayType: 'independent' });
+    expect(fb.translationJa).toBe('より良いエッセイ。');
+    expect(fb.glossary).toHaveLength(1);
+    expect(fb.glossary[0]).toMatchObject({ term: 'cohesion', meaning: '結束性' });
+  });
+
   it('falls back to the local estimator when the AI returns junk', async () => {
     const client = mockClient(() => 'not json at all');
     const fb = await correctWriting(client, {

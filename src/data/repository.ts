@@ -4,6 +4,7 @@ import type {
   SkillScores,
   StudySession,
 } from '../domain/types';
+import type { VocabWord } from '../domain/vocab';
 import { aggregateSessions } from '../domain/studyTime';
 import { createStore, type KeyValueStore } from './kv';
 
@@ -36,6 +37,7 @@ const KEYS = {
   settings: 'settings',
   attempts: 'attempts',
   curriculum: 'curriculum',
+  vocab: 'vocab',
   aiCachePrefix: 'aicache:',
 } as const;
 
@@ -82,6 +84,30 @@ export class Repository {
   }
   async saveCurriculum(curriculum: Curriculum): Promise<void> {
     await this.store.set(KEYS.curriculum, curriculum);
+  }
+
+  // --- Vocabulary (word-book) ---
+  async getVocab(): Promise<VocabWord[]> {
+    return (await this.store.get<VocabWord[]>(KEYS.vocab)) ?? [];
+  }
+  async saveVocab(words: VocabWord[]): Promise<void> {
+    await this.store.set(KEYS.vocab, words);
+  }
+  async addWord(word: VocabWord): Promise<VocabWord[]> {
+    const all = await this.getVocab();
+    const next = [...all, word];
+    await this.saveVocab(next);
+    return next;
+  }
+  async updateWord(word: VocabWord): Promise<VocabWord[]> {
+    const next = (await this.getVocab()).map((w) => (w.id === word.id ? word : w));
+    await this.saveVocab(next);
+    return next;
+  }
+  async removeWord(id: string): Promise<VocabWord[]> {
+    const next = (await this.getVocab()).filter((w) => w.id !== id);
+    await this.saveVocab(next);
+    return next;
   }
 
   // --- AI cache ---

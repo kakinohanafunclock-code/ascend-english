@@ -1,4 +1,5 @@
-import { Sparkles, ThumbsUp, ArrowUpRight, CircuitBoard } from 'lucide-react';
+import { Sparkles, ThumbsUp, ArrowUpRight, CircuitBoard, Languages, Plus, Check } from 'lucide-react';
+import type { GlossaryItem } from '../../ai/types';
 
 export interface RubricRow {
   label: string;
@@ -11,6 +12,10 @@ export function FeedbackPanel({
   strengths,
   improvements,
   correctedText,
+  translationJa,
+  glossary,
+  onAddWord,
+  isSaved,
   source,
 }: {
   toeflScaled: number;
@@ -18,6 +23,10 @@ export function FeedbackPanel({
   strengths: string[];
   improvements: string[];
   correctedText?: string;
+  translationJa?: string;
+  glossary?: GlossaryItem[];
+  onAddWord?: (item: GlossaryItem) => void;
+  isSaved?: (term: string) => boolean;
   source: 'ai' | 'fallback';
 }) {
   return (
@@ -94,9 +103,50 @@ export function FeedbackPanel({
       {correctedText && (
         <div>
           <p className="text-small font-medium mb-2">添削後の例</p>
-          <p className="text-small text-ink-muted whitespace-pre-wrap border-l-2 border-line pl-3">
+          <p className="text-small text-ink-muted whitespace-pre-wrap border-l-2 border-line pl-3 font-serif">
             {correctedText}
           </p>
+        </div>
+      )}
+
+      {translationJa && (
+        <div>
+          <p className="text-small font-medium mb-2 flex items-center gap-1.5">
+            <Languages size={14} className="text-accent" /> 日本語訳
+          </p>
+          <p className="text-small text-ink-muted whitespace-pre-wrap border-l-2 border-line pl-3">
+            {translationJa}
+          </p>
+        </div>
+      )}
+
+      {glossary && glossary.length > 0 && (
+        <div>
+          <p className="text-small font-medium mb-2">語注（わからない単語を単語帳へ）</p>
+          <ul className="flex flex-col gap-2">
+            {glossary.map((g, i) => {
+              const saved = isSaved?.(g.term) ?? false;
+              return (
+                <li key={i} className="flex items-center gap-3 rounded-token border border-line px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium">{g.term}</span>
+                    <span className="text-small text-ink-muted"> — {g.meaning}</span>
+                  </div>
+                  {onAddWord && (
+                    <button
+                      className="btn-ghost inline-flex w-auto shrink-0 px-2 py-1"
+                      disabled={saved}
+                      aria-label={`${g.term} を単語帳に追加`}
+                      onClick={() => onAddWord(g)}
+                    >
+                      {saved ? <Check size={15} className="text-positive" /> : <Plus size={15} />}
+                      <span className="text-micro">{saved ? '追加済' : '単語帳'}</span>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

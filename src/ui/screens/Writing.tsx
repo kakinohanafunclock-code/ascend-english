@@ -1,15 +1,15 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useApp } from '../../app/store';
 import { WRITING_PROMPTS } from '../../content';
 import { correctWriting, type WritingFeedback } from '../../ai';
+import { hasTerm } from '../../domain';
 import { FeedbackPanel } from '../components/FeedbackPanel';
 import { makeAttempt } from '../lib/record';
 
 export function Writing() {
-  const { ai, recordAttempt } = useApp();
+  const { ai, recordAttempt, vocab, addVocabWord } = useApp();
   const task = WRITING_PROMPTS[0];
-  const startedAt = useRef(Date.now());
   const [essay, setEssay] = useState('');
   const [feedback, setFeedback] = useState<WritingFeedback | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,9 +21,8 @@ export function Writing() {
     const fb = await correctWriting(ai, { prompt: task.prompt, essay, essayType: task.type });
     setFeedback(fb);
     setLoading(false);
-    const minutes = Math.max(1, Math.round((Date.now() - startedAt.current) / 60000));
     await recordAttempt(
-      makeAttempt({ skill: 'writing', taskId: task.id, durationMin: minutes, score: fb.toeflScaled }),
+      makeAttempt({ skill: 'writing', taskId: task.id, durationMin: task.estimatedMinutes, score: fb.toeflScaled }),
     );
   }
 
@@ -71,6 +70,10 @@ export function Writing() {
           strengths={feedback.strengths}
           improvements={feedback.improvements}
           correctedText={feedback.correctedText}
+          translationJa={feedback.translationJa}
+          glossary={feedback.glossary}
+          onAddWord={(g) => addVocabWord(g)}
+          isSaved={(term) => hasTerm(vocab, term)}
           source={feedback.source}
         />
       )}

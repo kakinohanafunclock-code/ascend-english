@@ -8,12 +8,23 @@ export interface RubricBreakdown {
   languageUse: number; // 0–5
 }
 
+/** A notable word the learner can save to their word-book. */
+export interface GlossaryItem {
+  term: string;
+  meaning: string; // Japanese
+  example?: string;
+}
+
 export interface WritingFeedback {
   estimatedScore: number; // 0–5 rubric average
   toeflScaled: number; // 0–30
   strengths: string[];
   improvements: string[];
   correctedText?: string;
+  /** Japanese translation of the corrected/model text. */
+  translationJa?: string;
+  /** Difficult words worth saving (term + JP meaning). */
+  glossary: GlossaryItem[];
   rubric: RubricBreakdown;
   source: 'ai' | 'fallback';
 }
@@ -23,14 +34,18 @@ export interface SpeakingFeedback {
   toeflScaled: number; // 0–30
   strengths: string[];
   improvements: string[];
+  translationJa?: string;
+  glossary: GlossaryItem[];
   rubric: { delivery: number; languageUse: number; topicDevelopment: number };
   source: 'ai' | 'fallback';
 }
 
 export interface ReadingExplanation {
   summary: string;
+  /** Japanese translation of the summary (and/or passage). */
+  translationJa?: string;
   keyPoints: string[];
-  vocabulary: { term: string; meaning: string }[];
+  vocabulary: GlossaryItem[];
   source: 'ai' | 'fallback';
 }
 

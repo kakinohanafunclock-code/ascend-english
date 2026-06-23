@@ -7,6 +7,7 @@ import {
   Headphones,
   Mic,
   PenLine,
+  BookMarked,
   Settings as SettingsIcon,
   GraduationCap,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ const NAV = [
   { to: '/listening', label: 'Listening', icon: Headphones },
   { to: '/speaking', label: 'Speaking', icon: Mic },
   { to: '/writing', label: 'Writing', icon: PenLine },
+  { to: '/vocabulary', label: '単語', icon: BookMarked },
   { to: '/settings', label: '設定', icon: SettingsIcon },
 ];
 
@@ -73,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
           <main className="px-6 md:px-10 py-6">{children}</main>
           {/* Mobile bottom nav */}
-          <nav className="md:hidden sticky bottom-0 grid grid-cols-7 border-t border-line bg-surface">
+          <nav className="md:hidden sticky bottom-0 grid grid-cols-8 border-t border-line bg-surface">
             {NAV.map(({ to, icon: Icon, label }) => (
               <NavLink
                 key={to}
