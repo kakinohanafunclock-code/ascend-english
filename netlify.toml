@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# SPA fallback (the AI function declares its own /api/ai path).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

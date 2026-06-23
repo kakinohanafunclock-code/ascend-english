@@ -59,7 +59,7 @@
   }
   .input {
     @apply w-full rounded-token border border-line-strong bg-surface px-3 py-2 text-sm text-ink
-           placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent;
+           placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-soft focus:border-accent;
   }
   .eyebrow {
     @apply text-micro font-semibold uppercase tracking-[0.12em] text-ink-subtle;

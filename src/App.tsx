@@ -1,15 +1,74 @@
-/**
- * App shell. Routes are wired up in the UI step; this minimal shell exists so the
- * dev server and scaffold boot cleanly before pages land.
- */
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { GraduationCap } from 'lucide-react';
+import { AppProvider, useApp } from './app/store';
+import { AppShell } from './ui/components/AppShell';
+import { Diagnostic } from './ui/screens/Diagnostic';
+import { Dashboard } from './ui/screens/Dashboard';
+import { Today } from './ui/screens/Today';
+import { Reading } from './ui/screens/Reading';
+import { Listening } from './ui/screens/Listening';
+import { Speaking } from './ui/screens/Speaking';
+import { Writing } from './ui/screens/Writing';
+import { Settings } from './ui/screens/Settings';
+
+function Root() {
+  const { profile } = useApp();
+  return <Navigate to={profile ? '/dashboard' : '/diagnostic'} replace />;
+}
+
+function DiagnosticPage() {
+  return (
+    <div className="min-h-screen bg-canvas">
+      <header className="border-b border-line">
+        <div className="mx-auto max-w-content px-6 md:px-10 py-4 flex items-center gap-2">
+          <span className="grid place-items-center w-7 h-7 rounded-token bg-accent text-white">
+            <GraduationCap size={16} />
+          </span>
+          <span className="font-semibold">Ascend</span>
+        </div>
+      </header>
+      <div className="mx-auto max-w-content px-6 md:px-10 py-10">
+        <Diagnostic />
+      </div>
+    </div>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <AppShell>{children}</AppShell>;
+}
+
+function Routed() {
+  const location = useLocation();
+  // Diagnostic is a focused, shell-less flow.
+  if (location.pathname === '/diagnostic') {
+    return (
+      <Routes>
+        <Route path="/diagnostic" element={<DiagnosticPage />} />
+      </Routes>
+    );
+  }
+  return (
+    <Shell>
+      <Routes>
+        <Route path="/" element={<Root />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/today" element={<Today />} />
+        <Route path="/reading" element={<Reading />} />
+        <Route path="/listening" element={<Listening />} />
+        <Route path="/speaking" element={<Speaking />} />
+        <Route path="/writing" element={<Writing />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Shell>
+  );
+}
+
 export default function App() {
   return (
-    <main className="min-h-screen grid place-items-center px-6">
-      <div className="card card-pad max-w-md text-center">
-        <p className="eyebrow mb-2">Ascend</p>
-        <h1 className="text-h1 font-semibold mb-2">TOEFL 105+ English Studio</h1>
-        <p className="text-ink-muted">Scaffold ready. Building modules…</p>
-      </div>
-    </main>
+    <AppProvider>
+      <Routed />
+    </AppProvider>
   );
 }
