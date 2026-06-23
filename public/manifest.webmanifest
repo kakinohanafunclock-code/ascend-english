@@ -1,0 +1,12 @@
+{
+  "name": "Ascend — TOEFL 105+ 英語学習",
+  "short_name": "Ascend",
+  "description": "TOEFL iBT 105+ を目指す4技能 AI 英語学習アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfbfa",
+  "theme_color": "#fbfbfa",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

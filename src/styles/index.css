@@ -1,0 +1,71 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans;
+    font-size: var(--font-size-body);
+    line-height: var(--leading-normal);
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-ink);
+  }
+  h1, h2, h3 {
+    @apply text-ink;
+    letter-spacing: -0.01em;
+  }
+  /* Respect reduced motion globally — motion is minimal and meaningful only */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-token;
+  }
+  .card-pad {
+    @apply p-6;
+  }
+  .hairline {
+    @apply border-line;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-token border text-sm font-medium
+           transition-colors duration-150 px-4 py-2 select-none;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white border-accent hover:bg-accent-ink;
+  }
+  .btn-secondary {
+    @apply btn bg-surface text-ink border-line-strong hover:bg-canvas;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-muted border-transparent hover:bg-canvas hover:text-ink;
+  }
+  .field-label {
+    @apply block text-small font-medium text-ink-muted mb-1.5;
+  }
+  .input {
+    @apply w-full rounded-token border border-line-strong bg-surface px-3 py-2 text-sm text-ink
+           placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent;
+  }
+  .eyebrow {
+    @apply text-micro font-semibold uppercase tracking-[0.12em] text-ink-subtle;
+  }
+  .tag {
+    @apply inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-0.5 text-micro
+           font-medium text-ink-muted;
+  }
+}
