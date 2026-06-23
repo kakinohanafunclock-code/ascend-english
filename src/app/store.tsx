@@ -26,6 +26,7 @@ import {
   type VocabWord,
 } from '../domain';
 import { VOCAB_DECK } from '../content';
+import { createCloudSync, supabaseConfigured } from '../data/supabase';
 import { createConfiguredAiClient } from '../ai';
 import type { AiClient } from '../ai/client';
 import {
@@ -49,6 +50,8 @@ interface AppState {
   reviewVocabWord: (word: VocabWord, grade: ReviewGrade) => Promise<void>;
   removeVocabWord: (id: string) => Promise<void>;
   seedVocabDeck: () => Promise<void>;
+  cloudConfigured: boolean;
+  syncNow: () => Promise<void>;
   resetAll: () => Promise<void>;
 }
 
@@ -81,6 +84,16 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Optional cloud pull (last-write-wins) before reading local state.
+      const pre = await repository.getSettings();
+      if (pre.cloudSyncEnabled && supabaseConfigured()) {
+        try {
+          const remote = await createCloudSync()?.pull();
+          if (remote) await repository.importAll(remote.data);
+        } catch {
+          /* offline / not provisioned — stay local */
+        }
+      }
       const [p, s, a, c, v] = await Promise.all([
         repository.getProfile(),
         repository.getSettings(),
@@ -177,6 +190,12 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     setVocab(current);
   }
 
+  async function syncNow(): Promise<void> {
+    const sync = createCloudSync();
+    if (!sync) return;
+    await sync.push(await repository.exportAll());
+  }
+
   async function resetAll(): Promise<void> {
     await repository.clearAll();
     setProfile(null);
@@ -209,6 +228,8 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     reviewVocabWord,
     removeVocabWord,
     seedVocabDeck,
+    cloudConfigured: supabaseConfigured(),
+    syncNow,
     resetAll,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

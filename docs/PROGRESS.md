@@ -21,10 +21,14 @@
 - コンテンツ増量: 診断、Reading/Listening 各2レッスン（日本語訳付き）、Speaking/Writing 各2題。
 - テスト: 合計 **94 + E2E 1** green。
 
+## 追加実装（2026-06-23 第3次）
+- Web Push（VAPID）本実装: クライアント購読フロー（push.ts、鍵デコードをテスト）、サーバ購読保存/配信関数（api/push/*）、Vercel Cron 設定、設定画面に購読 UI。
+- Supabase クラウド同期（任意）: device 単位スナップショット同期（supabase.ts、SDK 遅延読込）、Repository.importAll、設定画面トグル＋手動同期、schema.sql。
+- テスト: 合計 **99 + E2E 1** green。tsc クリーン、build 成功（supabase は別チャンクに分割）。
+
 ## 残タスク / 進行中
-- Web Push（VAPID）本実装。
-- Supabase クラウド同期（任意設定）。
-- GitHub リモート連携・無料枠デプロイ。
+- GitHub リモート連携（gh 未導入のため GitHub MCP もしくは手動 push）。
+- 無料枠への実デプロイ（Vercel/Netlify、要アカウント連携）。
 
 ## 既知の課題 / 留意点
 - TOEFL 公式スコアリングは非公開のため近似アルゴリズムを使用（DECISIONS 参照）。

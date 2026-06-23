@@ -67,6 +67,21 @@ npm run dev              # http://localhost:5173
 
 ---
 
+## クラウド同期 / Web Push（任意）
+
+どちらも未設定でアプリは完全動作します（端末内保存＋アプリ稼働中のローカル通知）。必要に応じて有効化:
+
+### Supabase クラウド同期（無料枠）
+1. Supabase プロジェクトを作成し、[supabase/schema.sql](supabase/schema.sql) を SQL エディタで実行。
+2. `.env` に `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` を設定。
+3. 設定画面で「クラウド同期」を ON → 端末間で学習データ（last-write-wins）を同期。SDK は遅延読み込みで初期バンドルに含めません。
+
+### Web Push（端末を閉じていても通知）
+1. `npx web-push generate-vapid-keys` で鍵を生成。
+2. フロント: `VITE_VAPID_PUBLIC_KEY`。サーバ: `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` と `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`（購読保存用）。
+3. 設定画面で「この端末をプッシュ登録」。配信は [api/push/send](api/push/send.ts) を Vercel Cron（[vercel.json](vercel.json) の `crons`、毎時）が叩いて、登録時刻（時）に一致する端末へ送信します。
+   - 注: 時刻は保存した「時」を UTC で比較する簡易方式です（タイムゾーン厳密化は今後の拡張）。確実な主経路はアプリ稼働中のローカルスケジュール。
+
 ## デプロイ（無料枠）
 
 ### Vercel

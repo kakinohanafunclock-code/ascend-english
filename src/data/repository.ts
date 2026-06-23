@@ -23,6 +23,7 @@ export interface Settings {
   reminderTime: string; // HH:mm (24h)
   goalScore: number;
   aiMode: AiMode;
+  cloudSyncEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderTime: '20:00',
   goalScore: 105,
   aiMode: 'proxy',
+  cloudSyncEnabled: false,
 };
 
 const KEYS = {
@@ -126,5 +128,12 @@ export class Repository {
   }
   async clearAll(): Promise<void> {
     await this.store.clear();
+  }
+
+  /** Restore a snapshot produced by exportAll (used by cloud sync pull). */
+  async importAll(snapshot: Record<string, unknown>): Promise<void> {
+    for (const [key, value] of Object.entries(snapshot)) {
+      if (value !== undefined) await this.store.set(key, value);
+    }
   }
 }
