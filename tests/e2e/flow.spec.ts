@@ -51,6 +51,11 @@ test('full journey: diagnostic → today → writing AI correction → dashboard
   await expect(page.getByRole('link', { name: /今日のタスクへ/ })).toBeVisible();
   await expect(page.getByRole('button', { name: '採点する' })).toHaveCount(0);
 
+  // Today now distinguishes the completed task (progress > 0 and a 完了 tag).
+  await page.getByRole('link', { name: '今日のタスク', exact: true }).first().click();
+  await expect(page.getByText(/本日の進捗 [1-9]/)).toBeVisible();
+  await expect(page.getByText('完了', { exact: true }).first()).toBeVisible();
+
   // Dashboard reflects the completed attempts (study time recorded).
   await page.getByRole('link', { name: 'ダッシュボード', exact: true }).first().click();
   await expect(page.getByText('総学習時間')).toBeVisible();
