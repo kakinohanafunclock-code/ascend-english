@@ -26,7 +26,14 @@ import {
   type VocabWord,
 } from '../domain';
 import { VOCAB_DECK } from '../content';
-import { createCloudSync, supabaseConfigured } from '../data/supabase';
+import {
+  createCloudSync,
+  supabaseConfigured,
+  getSyncCode,
+  setSyncCode,
+  generateSyncCode,
+  normalizeSyncCode,
+} from '../data/supabase';
 import { createConfiguredAiClient } from '../ai';
 import type { AiClient } from '../ai/client';
 import {
@@ -51,7 +58,10 @@ interface AppState {
   removeVocabWord: (id: string) => Promise<void>;
   seedVocabDeck: () => Promise<void>;
   cloudConfigured: boolean;
+  syncCode: string | null;
   syncNow: () => Promise<void>;
+  enableCloudSync: () => Promise<string>;
+  linkWithCode: (code: string) => Promise<{ pulled: boolean }>;
   resetAll: () => Promise<void>;
 }
 
@@ -80,6 +90,23 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
   const [vocab, setVocab] = useState<VocabWord[]>([]);
+  const [syncCode, setSyncCodeState] = useState<string | null>(getSyncCode());
+
+  /** Re-read all persisted state into React state (after a load or a cloud pull). */
+  async function reloadFromRepo(): Promise<void> {
+    const [p, s, a, c, v] = await Promise.all([
+      repository.getProfile(),
+      repository.getSettings(),
+      repository.getAttempts(),
+      repository.getCurriculum(),
+      repository.getVocab(),
+    ]);
+    setProfile(p ?? null);
+    setSettings(s);
+    setAttempts(a);
+    setCurriculum(c ?? null);
+    setVocab(v);
+  }
 
   useEffect(() => {
     let active = true;
@@ -94,19 +121,8 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
           /* offline / not provisioned — stay local */
         }
       }
-      const [p, s, a, c, v] = await Promise.all([
-        repository.getProfile(),
-        repository.getSettings(),
-        repository.getAttempts(),
-        repository.getCurriculum(),
-        repository.getVocab(),
-      ]);
       if (!active) return;
-      setProfile(p ?? null);
-      setSettings(s);
-      setAttempts(a);
-      setCurriculum(c ?? null);
-      setVocab(v);
+      await reloadFromRepo();
       setLoading(false);
     })();
     return () => {
@@ -196,6 +212,38 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     await sync.push(await repository.exportAll());
   }
 
+  /** Turn on sync for THIS device: ensure a shared code exists, then push. */
+  async function enableCloudSync(): Promise<string> {
+    let code = getSyncCode();
+    if (!code) {
+      code = generateSyncCode();
+      setSyncCode(code);
+    }
+    setSyncCodeState(getSyncCode());
+    await repository.saveSettings({ cloudSyncEnabled: true });
+    setSettings(await repository.getSettings());
+    await syncNow();
+    return code;
+  }
+
+  /** Link this device to another's data by entering its sync code, then pull. */
+  async function linkWithCode(code: string): Promise<{ pulled: boolean }> {
+    setSyncCode(normalizeSyncCode(code));
+    setSyncCodeState(getSyncCode());
+    await repository.saveSettings({ cloudSyncEnabled: true });
+    const sync = createCloudSync();
+    let pulled = false;
+    if (sync) {
+      const remote = await sync.pull();
+      if (remote) {
+        await repository.importAll(remote.data);
+        pulled = true;
+      }
+    }
+    await reloadFromRepo();
+    return { pulled };
+  }
+
   async function resetAll(): Promise<void> {
     await repository.clearAll();
     setProfile(null);
@@ -229,7 +277,10 @@ export function AppProvider({ children, repo, ai }: AppProviderProps) {
     removeVocabWord,
     seedVocabDeck,
     cloudConfigured: supabaseConfigured(),
+    syncCode,
     syncNow,
+    enableCloudSync,
+    linkWithCode,
     resetAll,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

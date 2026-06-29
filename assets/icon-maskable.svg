@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Full-bleed background; the OS applies the mask shape (circle/squircle). -->
+  <rect width="512" height="512" fill="#0f6e63"/>
+  <!-- Mark kept within the central ~64% safe zone so masking never clips it. -->
+  <path d="M168 350 L256 186 L344 350" fill="none" stroke="#ffffff" stroke-width="28"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M212 300 H300" fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round"/>
+</svg>

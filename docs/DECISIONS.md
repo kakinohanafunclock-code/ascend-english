@@ -2,6 +2,13 @@
 
 追記形式。新しい決定を上に積む。
 
+## 2026-06-29 — PWA アイコン高解像度化 / 端末間同期（同期コード）
+- **決定**: ホーム画面アイコンを PNG（192/512、maskable 512、apple-touch 180、favicon 32）で提供。`assets/icon.svg` `assets/icon-maskable.svg` から `sharp`（`npm run gen:icons`）で生成し、生成物は public/ にコミット。manifest と index.html を更新。
+- **理由**: 32px の SVG favicon のみだったため、iOS/Android のホーム画面で拡大され画質が劣化していた。iOS は apple-touch-icon（不透明 PNG）必須。
+- **決定**: クラウド同期のクラウド行キーを「**同期コード**（共有）→ 無ければ device_id（端末ローカル）」に変更。設定画面でコード発行・コピー・入力連携を提供。
+- **理由**: 従来は device_id 固定キーで端末ごとに別行となり、PC↔スマホでデータ共有できなかった。ログイン不要の要件下で、同一コードを両端末に入れることで同一行を共有し cross-device 同期を実現。
+- **留意**: コードを知る者は誰でもアクセス可能な簡易方式。厳密な保護が必要なら Supabase Auth + RLS（auth.uid()）へ移行。
+
 ## 2026-06-29 — Vercel 無料枠の Cron 制約に対応
 - **決定**: プッシュ配信 Cron を毎時 `0 * * * *` から毎日1回 `0 11 * * *`（11:00 UTC ≒ 20:00 JST）へ変更。`api/push/send` は時刻フィルタを撤廃し全購読者へ1日1回配信。
 - **理由**: Vercel Hobby は「Cron は1日1回まで」。毎時式はデプロイ時に失敗する（`Hobby accounts are limited to cron jobs that run once per day`）。

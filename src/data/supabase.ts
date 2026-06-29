@@ -30,6 +30,7 @@ async function loadClient(): Promise<SupabaseClient> {
 }
 
 const DEVICE_KEY = 'ascend:deviceId';
+const SYNC_CODE_KEY = 'ascend:syncCode';
 
 /** Stable per-device id (created once, persisted in localStorage). */
 export function getDeviceId(): string {
@@ -39,6 +40,40 @@ export function getDeviceId(): string {
     localStorage.setItem(DEVICE_KEY, id);
   }
   return id;
+}
+
+/**
+ * The sync code is the SHARED cloud row key. Enter the same code on every device to
+ * sync the same data (no account needed). Without a code, sync falls back to the
+ * per-device id — i.e. a private backup that does not cross devices.
+ */
+export function getSyncCode(): string | null {
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(SYNC_CODE_KEY) : null;
+}
+
+export function setSyncCode(code: string): void {
+  localStorage.setItem(SYNC_CODE_KEY, normalizeSyncCode(code));
+}
+
+export function clearSyncCode(): void {
+  localStorage.removeItem(SYNC_CODE_KEY);
+}
+
+/** Human-friendly code like "ASCD-7K2M-9QXP" (unambiguous characters only). */
+export function generateSyncCode(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const group = () =>
+    Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+  return `${group()}-${group()}-${group()}`;
+}
+
+export function normalizeSyncCode(code: string): string {
+  return code.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+/** The cloud row key in effect: the shared sync code if set, else this device's id. */
+export function syncKey(): string {
+  return getSyncCode() ?? getDeviceId();
 }
 
 export interface CloudSnapshot {
@@ -54,20 +89,20 @@ export interface CloudSync {
 /** Returns a sync handle, or null when Supabase isn't configured. */
 export function createCloudSync(): CloudSync | null {
   if (!supabaseConfigured()) return null;
-  const deviceId = getDeviceId();
+  const key = syncKey();
   return {
     async push(snapshot) {
       const sb = await loadClient();
       await sb
         .from('user_state')
-        .upsert({ device_id: deviceId, data: snapshot, updated_at: new Date().toISOString() });
+        .upsert({ device_id: key, data: snapshot, updated_at: new Date().toISOString() });
     },
     async pull() {
       const sb = await loadClient();
       const { data } = await sb
         .from('user_state')
         .select('data, updated_at')
-        .eq('device_id', deviceId)
+        .eq('device_id', key)
         .maybeSingle();
       if (!data) return null;
       return { data: data.data as Record<string, unknown>, updatedAt: data.updated_at as string };

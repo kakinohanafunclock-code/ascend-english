@@ -71,10 +71,14 @@ npm run dev              # http://localhost:5173
 
 どちらも未設定でアプリは完全動作します（端末内保存＋アプリ稼働中のローカル通知）。必要に応じて有効化:
 
-### Supabase クラウド同期（無料枠）
+### Supabase クラウド同期（無料枠・端末間で共有）
 1. Supabase プロジェクトを作成し、[supabase/schema.sql](supabase/schema.sql) を SQL エディタで実行。
-2. `.env` に `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` を設定。
-3. 設定画面で「クラウド同期」を ON → 端末間で学習データ（last-write-wins）を同期。SDK は遅延読み込みで初期バンドルに含めません。
+2. `VITE_SUPABASE_URL`（プロジェクトURLのみ。`/rest/v1/` は付けない）/ `VITE_SUPABASE_ANON_KEY` を Vercel の環境変数（本番）または `.env`（ローカル）に設定 → 再デプロイ。
+3. **端末間で共有する手順（同期コード方式・ログイン不要）**:
+   - 1台目（例: PC）: 設定 → 「クラウド同期を有効にする」を ON。表示される**同期コード**（例 `ABCD-EFGH-JKLM`）を控える。
+   - 2台目（例: スマホ）: 設定 → 「別の端末の同期コードを入力して連携」にそのコードを入力 →「連携して取り込む」。1台目のデータが取り込まれます。
+   - 以降、各端末で「今すぐ同期」または起動時の自動取得で last-write-wins 同期。SDK は遅延読み込みで初期バンドルに含めません。
+   - 注: コードを知っていれば誰でもそのデータにアクセスできます（簡易方式）。厳密な保護が必要なら Supabase Auth への移行を推奨。
 
 ### Web Push（端末を閉じていても通知）
 1. `npx web-push generate-vapid-keys` で鍵を生成。

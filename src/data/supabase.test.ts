@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { supabaseConfigured, getDeviceId, createCloudSync } from './supabase';
+import {
+  supabaseConfigured,
+  getDeviceId,
+  createCloudSync,
+  getSyncCode,
+  setSyncCode,
+  generateSyncCode,
+  normalizeSyncCode,
+  syncKey,
+} from './supabase';
 import { Repository } from './repository';
 import { createMemoryStore } from './kv';
 
@@ -19,6 +28,26 @@ describe('supabase sync (unconfigured)', () => {
     const b = getDeviceId();
     expect(a).toBe(b);
     expect(a).toMatch(/^dev-/);
+  });
+});
+
+describe('sync code (cross-device key)', () => {
+  it('normalizes and persists a sync code', () => {
+    setSyncCode(' abcd-efgh-jklm ');
+    expect(getSyncCode()).toBe('ABCD-EFGH-JKLM');
+    expect(normalizeSyncCode(' ab cd ')).toBe('ABCD');
+  });
+
+  it('generates codes in the XXXX-XXXX-XXXX shape with safe characters', () => {
+    const code = generateSyncCode();
+    expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    expect(code).not.toMatch(/[O0I1]/); // ambiguous chars excluded
+  });
+
+  it('syncKey prefers the shared code, else the device id', () => {
+    expect(syncKey()).toBe(getDeviceId()); // no code set
+    setSyncCode('ABCD-EFGH-JKLM');
+    expect(syncKey()).toBe('ABCD-EFGH-JKLM');
   });
 });
 

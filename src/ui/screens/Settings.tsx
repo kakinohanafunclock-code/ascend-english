@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, BellRing, Check, AlertCircle, Trash2, Send, Cloud, RefreshCw } from 'lucide-react';
+import { Bell, BellRing, Check, AlertCircle, Trash2, Send, Cloud, RefreshCw, Copy } from 'lucide-react';
 import { useApp } from '../../app/store';
 import {
   notificationPermission,
@@ -13,8 +13,11 @@ import {
 import { pushConfigured, pushSupported, subscribeToPush } from '../../notifications/push';
 
 export function Settings() {
-  const { settings, updateSettings, resetAll, cloudConfigured, syncNow } = useApp();
+  const { settings, updateSettings, resetAll, cloudConfigured, syncCode, syncNow, enableCloudSync, linkWithCode } =
+    useApp();
   const [syncing, setSyncing] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const navigate = useNavigate();
   const [permission, setPermission] = useState<NotificationPermission>(notificationPermission());
   const [pushSubscribed, setPushSubscribed] = useState(false);
@@ -149,17 +152,64 @@ export function Settings() {
         {cloudConfigured ? (
           <>
             <label className="flex items-center justify-between">
-              <span className="text-small font-medium">Supabase に同期する</span>
+              <span className="text-small font-medium">クラウド同期を有効にする</span>
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-[color:var(--color-accent)]"
                 checked={settings.cloudSyncEnabled}
                 onChange={async (e) => {
-                  await updateSettings({ cloudSyncEnabled: e.target.checked });
-                  if (e.target.checked) await syncNow();
+                  if (e.target.checked) {
+                    await enableCloudSync();
+                    setSyncMsg('この端末のデータをクラウドに保存しました。');
+                  } else {
+                    await updateSettings({ cloudSyncEnabled: false });
+                    setSyncMsg(null);
+                  }
                 }}
               />
             </label>
+
+            {settings.cloudSyncEnabled && syncCode && (
+              <div className="rounded-token border border-line p-3 flex flex-col gap-2">
+                <p className="text-micro text-ink-subtle">この端末の同期コード（他の端末で入力すると同じデータを使えます）</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-small tracking-wide">{syncCode}</code>
+                  <button
+                    className="btn-ghost inline-flex w-auto px-2 py-1"
+                    onClick={() => navigator.clipboard?.writeText(syncCode)}
+                  >
+                    <Copy size={14} /> コピー
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-line pt-3">
+              <label className="field-label" htmlFor="sync-code">別の端末の同期コードを入力して連携</label>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  id="sync-code"
+                  className="input w-48 font-mono"
+                  placeholder="ABCD-EFGH-JKLM"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                />
+                <button
+                  className="btn-secondary inline-flex w-auto"
+                  disabled={!codeInput.trim() || syncing}
+                  onClick={async () => {
+                    setSyncing(true);
+                    const { pulled } = await linkWithCode(codeInput);
+                    setSyncing(false);
+                    setCodeInput('');
+                    setSyncMsg(pulled ? 'データを取り込みました。' : 'そのコードのデータが見つかりませんでした。');
+                  }}
+                >
+                  連携して取り込む
+                </button>
+              </div>
+            </div>
+
             <button
               className="btn-secondary inline-flex w-auto"
               disabled={!settings.cloudSyncEnabled || syncing}
@@ -167,10 +217,13 @@ export function Settings() {
                 setSyncing(true);
                 await syncNow();
                 setSyncing(false);
+                setSyncMsg('同期しました。');
               }}
             >
               <RefreshCw size={15} className={syncing ? 'animate-spin' : ''} /> 今すぐ同期
             </button>
+
+            {syncMsg && <p className="text-small text-ink-muted">{syncMsg}</p>}
           </>
         ) : (
           <p className="text-small text-ink-muted">
