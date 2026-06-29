@@ -1,13 +1,14 @@
 /**
- * Send the daily reminder to subscriptions whose configured hour matches the current
- * UTC hour. Intended to be invoked by a scheduler (Vercel Cron — see vercel.json — or
- * a GitHub Actions schedule hitting this URL).
+ * Send the daily reminder to all stored subscriptions. Intended to be invoked by a
+ * scheduler (Vercel Cron — see vercel.json — or a GitHub Actions schedule hitting this URL).
  *
  * Requires: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  *
- * Note: scheduling is by the stored "HH:mm" hour compared in UTC — an approximation of
- * each user's local time. Precise per-timezone delivery is a future enhancement; the
- * reliable primary path remains the in-app/Service-Worker local schedule.
+ * Free-tier note: Vercel Hobby allows only one cron run per day, so this fires once daily
+ * (vercel.json schedule) for every subscriber rather than honoring each user's chosen hour.
+ * Precise per-user/per-timezone delivery would need a paid hourly cron (then re-enable the
+ * hour filter) or an external scheduler; the reliable primary path remains the in-app /
+ * Service-Worker local schedule, which does respect the user's exact time.
  */
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
@@ -25,8 +26,7 @@ export default async function handler(req: { method?: string }, res: ResponseLik
   webpush.setVapidDetails('mailto:reminders@ascend.app', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  const hour = new Date().getUTCHours();
-  const { data, error } = await supabase.from('push_subscriptions').select('endpoint, subscription, time');
+  const { data, error } = await supabase.from('push_subscriptions').select('endpoint, subscription');
   if (error) return res.status(500).json({ error: error.message });
 
   const payload = JSON.stringify({
@@ -36,8 +36,6 @@ export default async function handler(req: { method?: string }, res: ResponseLik
 
   let sent = 0;
   for (const row of data ?? []) {
-    const subHour = Number(String(row.time ?? '20:00').split(':')[0]);
-    if (subHour !== hour) continue;
     try {
       await webpush.sendNotification(row.subscription, payload);
       sent++;

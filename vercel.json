@@ -4,5 +4,5 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
-  "crons": [{ "path": "/api/push/send", "schedule": "0 * * * *" }]
+  "crons": [{ "path": "/api/push/send", "schedule": "0 11 * * *" }]
 }

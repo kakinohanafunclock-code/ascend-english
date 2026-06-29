@@ -79,8 +79,8 @@ npm run dev              # http://localhost:5173
 ### Web Push（端末を閉じていても通知）
 1. `npx web-push generate-vapid-keys` で鍵を生成。
 2. フロント: `VITE_VAPID_PUBLIC_KEY`。サーバ: `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` と `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`（購読保存用）。
-3. 設定画面で「この端末をプッシュ登録」。配信は [api/push/send](api/push/send.ts) を Vercel Cron（[vercel.json](vercel.json) の `crons`、毎時）が叩いて、登録時刻（時）に一致する端末へ送信します。
-   - 注: 時刻は保存した「時」を UTC で比較する簡易方式です（タイムゾーン厳密化は今後の拡張）。確実な主経路はアプリ稼働中のローカルスケジュール。
+3. 設定画面で「この端末をプッシュ登録」。配信は [api/push/send](api/push/send.ts) を Vercel Cron（[vercel.json](vercel.json) の `crons`）が叩いて全購読者へ送信します。
+   - 注: Vercel Hobby（無料）は **Cron が1日1回まで** のため、既定は毎日1回配信（`0 11 * * *` = 11:00 UTC ≒ 20:00 JST）です。ユーザー個別の時刻厳密化は有料の毎時 Cron か外部スケジューラが必要（その場合 `send.ts` の時刻フィルタを再有効化）。確実な時刻指定の主経路はアプリ稼働中のローカルスケジュールです。
 
 ## デプロイ（無料枠）
 
