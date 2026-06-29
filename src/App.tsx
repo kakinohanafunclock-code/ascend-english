@@ -20,15 +20,15 @@ function Root() {
 function DiagnosticPage() {
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="border-b border-line">
-        <div className="mx-auto max-w-content px-6 md:px-10 py-4 flex items-center gap-2">
+      <header className="border-b border-line" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="mx-auto max-w-content px-4 md:px-10 py-4 flex items-center gap-2">
           <span className="grid place-items-center w-7 h-7 rounded-token bg-accent text-white">
             <GraduationCap size={16} />
           </span>
           <span className="font-semibold">Ascend</span>
         </div>
       </header>
-      <div className="mx-auto max-w-content px-6 md:px-10 py-10">
+      <div className="mx-auto max-w-content px-4 md:px-10 py-6 md:py-10">
         <Diagnostic />
       </div>
     </div>

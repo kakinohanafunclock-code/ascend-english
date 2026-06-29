@@ -43,7 +43,7 @@
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-token border text-sm font-medium
-           transition-colors duration-150 px-4 py-2 select-none;
+           transition-colors duration-150 px-4 py-2.5 min-h-[44px] select-none;
   }
   .btn-primary {
     @apply btn bg-accent text-white border-accent hover:bg-accent-ink;
