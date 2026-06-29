@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { supabaseConfigured, getDeviceId, createCloudSync } from './supabase';
 import { Repository } from './repository';
 import { createMemoryStore } from './kv';
 
-describe('supabase sync (unconfigured by default)', () => {
+afterEach(() => vi.unstubAllEnvs());
+
+describe('supabase sync (unconfigured)', () => {
   it('reports not configured and returns a null sync handle without env', () => {
+    // Deterministic regardless of any local .env the developer has set.
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     expect(supabaseConfigured()).toBe(false);
     expect(createCloudSync()).toBeNull();
   });

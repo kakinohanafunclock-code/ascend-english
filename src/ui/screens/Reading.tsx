@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Sparkles, Loader2, Languages, Plus, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Loader2, Languages, Plus, Check, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../app/store';
 import { Quiz, type QuizResult } from '../components/Quiz';
 import { READING_LESSONS } from '../../content';
@@ -17,6 +18,11 @@ export function Reading() {
 
   async function onComplete(result: QuizResult) {
     setDone(result);
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      /* scrollTo unsupported (e.g. jsdom) */
+    }
     await recordAttempt(
       makeAttempt({
         skill: 'reading',
@@ -57,18 +63,29 @@ export function Reading() {
         )}
       </article>
 
-      <Quiz questions={lesson.questions} onComplete={onComplete} />
+      {!done && <Quiz questions={lesson.questions} onComplete={onComplete} />}
 
       {done && (
         <div className="flex flex-col gap-4">
-          <div className="card card-pad flex items-center justify-between">
-            <p className="text-small text-ink-muted">
-              正答 {done.correctCount}/{done.items.length}
-            </p>
-            <button className="btn-primary inline-flex w-auto" onClick={getExplanation} disabled={loading}>
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              AI 精読解説
-            </button>
+          <div className="card card-pad flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={20} className="text-positive" />
+              <p className="font-medium">
+                完了しました — 正答 {done.correctCount}/{done.items.length}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button className="btn-primary inline-flex w-auto" onClick={getExplanation} disabled={loading}>
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                AI 精読解説
+              </button>
+              <Link to="/today" className="btn-secondary inline-flex w-auto">
+                今日のタスクへ <ArrowRight size={16} />
+              </Link>
+              <Link to="/dashboard" className="btn-ghost inline-flex w-auto">
+                ダッシュボード
+              </Link>
+            </div>
           </div>
 
           {explanation && (

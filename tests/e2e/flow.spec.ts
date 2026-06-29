@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { DIAGNOSTIC } from '../../src/content';
+import { DIAGNOSTIC, READING_LESSONS } from '../../src/content';
 
 const ESSAY =
   'I agree that universities should require courses outside the major because a broad ' +
@@ -40,7 +40,18 @@ test('full journey: diagnostic → today → writing AI correction → dashboard
   await expect(page.getByRole('heading', { name: 'AI 添削', exact: true })).toBeVisible();
   await expect(page.getByText('/ 30 換算スコア目安')).toBeVisible();
 
-  // Dashboard reflects the completed writing attempt (study time recorded).
+  // Reading → solve → 完了 transitions to a completion view (the reported bug fix).
+  await page.getByRole('link', { name: 'Reading', exact: true }).first().click();
+  for (const q of READING_LESSONS[0].questions) {
+    await page.locator('button', { hasText: q.options[q.answerIndex] }).first().click();
+  }
+  await page.getByRole('button', { name: '採点する' }).click();
+  await page.getByRole('button', { name: '完了' }).click();
+  await expect(page.getByText(/完了しました/)).toBeVisible();
+  await expect(page.getByRole('link', { name: /今日のタスクへ/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: '採点する' })).toHaveCount(0);
+
+  // Dashboard reflects the completed attempts (study time recorded).
   await page.getByRole('link', { name: 'ダッシュボード', exact: true }).first().click();
   await expect(page.getByText('総学習時間')).toBeVisible();
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Play, Square, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Play, Square, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useApp } from '../../app/store';
 import { Quiz, type QuizResult } from '../components/Quiz';
 import { LISTENING_LESSONS } from '../../content';
@@ -28,6 +29,11 @@ export function Listening() {
   async function onComplete(result: QuizResult) {
     setDone(result);
     setShowScript(true);
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      /* scrollTo unsupported (e.g. jsdom) */
+    }
     await recordAttempt(
       makeAttempt({
         skill: 'listening',
@@ -74,13 +80,27 @@ export function Listening() {
         )}
       </div>
 
-      <Quiz questions={lesson.questions} onComplete={onComplete} />
+      {!done && <Quiz questions={lesson.questions} onComplete={onComplete} />}
 
       {done && (
-        <div className="card card-pad">
+        <div className="card card-pad flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={20} className="text-positive" />
+            <p className="font-medium">
+              完了しました — 正答 {done.correctCount}/{done.items.length}
+            </p>
+          </div>
           <p className="text-small text-ink-muted">
-            正答 {done.correctCount}/{done.items.length}。スクリプトを表示して聞き取れなかった箇所を確認しましょう。
+            スクリプトを表示して、聞き取れなかった箇所を確認しましょう。
           </p>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/today" className="btn-primary inline-flex w-auto">
+              今日のタスクへ <ArrowRight size={16} />
+            </Link>
+            <Link to="/dashboard" className="btn-secondary inline-flex w-auto">
+              ダッシュボード
+            </Link>
+          </div>
         </div>
       )}
     </div>

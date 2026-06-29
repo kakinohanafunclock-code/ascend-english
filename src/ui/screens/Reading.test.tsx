@@ -27,4 +27,22 @@ describe('Reading screen', () => {
       expect(attempts[0].skill).toBe('reading');
     });
   });
+
+  it('transitions to a completion view with next-step links after 完了', async () => {
+    const user = userEvent.setup();
+    const repo = new Repository(createMemoryStore());
+    renderWithApp(<Reading />, { repo });
+
+    const lesson = READING_LESSONS[0];
+    for (const q of lesson.questions) {
+      await user.click(await screen.findByText(q.options[q.answerIndex]));
+    }
+    await user.click(screen.getByRole('button', { name: '採点する' }));
+    await user.click(screen.getByRole('button', { name: '完了' }));
+
+    // Completion view replaces the quiz and offers navigation.
+    expect(await screen.findByText(/完了しました/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /今日のタスクへ/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '採点する' })).not.toBeInTheDocument();
+  });
 });
